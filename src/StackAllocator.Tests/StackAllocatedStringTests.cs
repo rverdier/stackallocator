@@ -10,38 +10,30 @@ namespace StackAllocator.Tests
     [TestFixture]
     public class StackAllocatedStringTests
     {
-        private static void AllocatesString(string originalString, Action<string, string> assertion, Encoding encoding = null)
-        {
-            encoding = encoding ?? Encoding.Default;
-            var bytes = encoding.GetBytes(originalString);
-
-            UnsafeStackAllocator.NewString(bytes, bytes.Length, encoding.GetDecoder(), x => assertion(originalString, x));
-        }
-
         [Test]
         public void Should_be_comparable()
         {
-            AllocatesString("lol", (orignal, allocated) =>
+            AllocatesString("lol", (template, allocated) =>
             {
-                Check.That(allocated.Equals(orignal)).IsTrue();
-                Check.That(allocated == orignal).IsTrue();
-                Check.That(ReferenceEquals(allocated, orignal)).IsFalse();
+                Check.That(allocated.Equals(template)).IsTrue();
+                Check.That(allocated == template).IsTrue();
+                Check.That(ReferenceEquals(allocated, template)).IsFalse();
             });
         }
 
         [Test]
         public void Should_support_encoding()
         {
-            AllocatesString("foo", (orignal, allocated) => Check.That(allocated).Equals(orignal), Encoding.ASCII);
-            AllocatesString("rŒma–––in", (orignal, allocated) => Check.That(allocated).Equals(orignal), Encoding.UTF8);
-            AllocatesString("мясо", (orignal, allocated) => Check.That(allocated).Equals(orignal), Encoding.UTF32);
-            AllocatesString("v̤̝̺̬͔ͅi̝a҉͚̱̪̻͎̝̮ṋ̀d̦͖̖̮͞e̘̗͎̹", (orignal, allocated) => Check.That(allocated).Equals(orignal), Encoding.Unicode);
+            AllocatesString("foo", (template, allocated) => Check.That(allocated).Equals(template), Encoding.ASCII);
+            AllocatesString("rŒma–––in", (template, allocated) => Check.That(allocated).Equals(template), Encoding.UTF8);
+            AllocatesString("мясо", (template, allocated) => Check.That(allocated).Equals(template), Encoding.UTF32);
+            AllocatesString("v̤̝̺̬͔ͅi̝a҉͚̱̪̻͎̝̮ṋ̀d̦͖̖̮͞e̘̗͎̹", (template, allocated) => Check.That(allocated).Equals(template), Encoding.Unicode);
         }
 
         [Test]
         public void Should_support_locking()
         {
-            AllocatesString("romain", (orignal, allocated) =>
+            AllocatesString("romain", (template, allocated) =>
             {
                 lock (allocated)
                 {
@@ -52,18 +44,18 @@ namespace StackAllocator.Tests
         [Test]
         public void Should_support_method_dispatch()
         {
-            AllocatesString("lol", (orignal, allocated) =>
+            AllocatesString("lol", (template, allocated) =>
             {
-                Check.That(allocated.ToString()).Equals(orignal.ToString());
-                Check.That(allocated.ToLower()).Equals(orignal.ToLower());
-                Check.That(allocated.ToUpper()).Equals(orignal.ToUpper());
+                Check.That(allocated.ToString()).Equals(template.ToString());
+                Check.That(allocated.ToLower()).Equals(template.ToLower());
+                Check.That(allocated.ToUpper()).Equals(template.ToUpper());
             });
         }
 
         [Test]
         public void Should_support_pinning_and_writing()
         {
-            AllocatesString("romain", (orignal, allocated) =>
+            AllocatesString("romain", (template, allocated) =>
             {
                 unsafe
                 {
@@ -74,7 +66,7 @@ namespace StackAllocator.Tests
                             c[i] = char.ToUpper(c[i]);
                         }
 
-                        Check.That(allocated).Equals(orignal.ToUpper());
+                        Check.That(allocated).Equals(template.ToUpper());
                     }
                 }
             });
@@ -83,11 +75,11 @@ namespace StackAllocator.Tests
         [Test]
         public void Should_support_reading()
         {
-            AllocatesString("romain", (orignal, allocated) =>
+            AllocatesString("romain", (template, allocated) =>
             {
                 for (var i = 0; i < allocated.Length; i++)
                 {
-                    Check.That(allocated[i]).Equals(orignal[i]);
+                    Check.That(allocated[i]).Equals(template[i]);
                 }
             });
         }
@@ -95,18 +87,18 @@ namespace StackAllocator.Tests
         [Test]
         public void Should_support_string_hashcode()
         {
-            AllocatesString("lol", (orignal, allocated) =>
+            AllocatesString("lol", (template, allocated) =>
             {
                 var dictionary = new Dictionary<string, int> {{allocated, 42}};
                 Check.That(dictionary[allocated]).Equals(42);
-                Check.That(allocated.GetHashCode()).Equals(orignal.GetHashCode());
+                Check.That(allocated.GetHashCode()).Equals(template.GetHashCode());
             });
         }
 
         [Test]
         public void Should_support_synchronized_concurrent_access()
         {
-            AllocatesString("romain", (orignal, allocated) =>
+            AllocatesString("romain", (template, allocated) =>
             {
                 var counter = 0;
                 const int iterationCount = 10*1000*1000;
@@ -131,6 +123,14 @@ namespace StackAllocator.Tests
                 Task.WaitAll(t1, t2);
                 Check.That(counter).IsEqualTo(iterationCount*2);
             });
+        }
+
+        private static void AllocatesString(string template, Action<string, string> assertion, Encoding encoding = null)
+        {
+            encoding = encoding ?? Encoding.Default;
+            var bytes = encoding.GetBytes(template);
+
+            UnsafeStackAllocator.NewString(bytes, bytes.Length, encoding.GetDecoder(), x => assertion(template, x));
         }
     }
 }
