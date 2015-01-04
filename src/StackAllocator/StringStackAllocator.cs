@@ -6,7 +6,7 @@ namespace StackAllocator
 {
     internal static unsafe class StringStackAllocator
     {
-        private static readonly IObjectHeader _stringHeader = CaptureStringHeader();
+        private static readonly IntPtr _stringTypeHandle = (typeof (string).TypeHandle.Value);
 
         public static void Allocates(byte[] bytes, int length, Decoder decoder, Action<string> action)
         {
@@ -32,15 +32,15 @@ namespace StackAllocator
                 if (Environment.Is64BitProcess)
                 {
                     var string64 = (String64*) stackAllocatedArray;
-                    string64->SyncBlockIndex = _stringHeader.SyncBlockIndex;
-                    string64->MethodTablePointer = _stringHeader.MethodTablePointer;
+                    string64->SyncBlockIndex = IntPtr.Zero;
+                    string64->MethodTablePointer = _stringTypeHandle;
                     string64->Length = charsCount;
                     return PointerHelper<string>.Reinterpret(((byte*) string64) + String64.SyncBlocSize);
                 }
 
                 var string32 = (String32*) stackAllocatedArray;
-                string32->SyncBlockIndex = _stringHeader.SyncBlockIndex;
-                string32->MethodTablePointer = _stringHeader.MethodTablePointer;
+                string32->SyncBlockIndex = IntPtr.Zero;
+                string32->MethodTablePointer = _stringTypeHandle;
                 string32->Length = charsCount;
                 return PointerHelper<string>.Reinterpret(((byte*) string32) + String32.SyncBlocSize);
             }
@@ -51,24 +51,6 @@ namespace StackAllocator
             var headerSize = Environment.Is64BitProcess ? String64.HeaderSize : String32.HeaderSize;
             var charCount = decoder.GetCharCount(bytes, 0, length) + 1; // +1 for nul character at the end
             return headerSize + (charCount*sizeof (char));
-        }
-
-        private static IObjectHeader CaptureStringHeader()
-        {
-            if (Environment.Is64BitProcess)
-            {
-                fixed (char* p = string.Empty)
-                {
-                    var header = (ObjectHeader64*) (((byte*) p) - String64.HeaderSize);
-                    return *header;
-                }
-            }
-
-            fixed (char* p = string.Empty)
-            {
-                var header = (ObjectHeader32*)(((byte*)p) - String32.HeaderSize);
-                return *header;
-            }
         }
     }
 }

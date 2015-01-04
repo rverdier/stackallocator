@@ -131,14 +131,14 @@ namespace StackAllocator.Tests
             UnsafeStackAllocator.NewArrayOf<T>(template.Length, allocated => assertion(template, allocated));
         }
 
-        private enum TestIntEnum : short
+        private enum TestIntEnum
         {
             A,
             B,
             C
         }
 
-        private enum TestShortEnum
+        private enum TestShortEnum : short
         {
             A,
             B,

@@ -85,7 +85,7 @@ namespace StackAllocator.Tests
         }
 
         [Test]
-        public void Should_support_string_hashcode()
+        public void Should_support_hashcode()
         {
             AllocatesString("lol", (template, allocated) =>
             {
