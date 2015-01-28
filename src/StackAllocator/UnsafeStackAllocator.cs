@@ -7,12 +7,12 @@ namespace StackAllocator
     {
         public static void NewArrayOf<T>(int length, Action<T[]> action) where T : struct
         {
-            ArrayStackAllocator<T>.Allocates(length, action);
+            ArrayStackAllocator<T>.Allocate(length, action);
         }
 
         public static void NewString(byte[] bytes, int length, Decoder decoder, Action<string> action)
         {
-            StringStackAllocator.Allocates(bytes, length, decoder, action);
+            StringStackAllocator.Allocate(bytes, length, decoder, action);
         }
     }
 }

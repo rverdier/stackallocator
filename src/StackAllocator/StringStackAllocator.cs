@@ -8,7 +8,7 @@ namespace StackAllocator
     {
         private static readonly IntPtr _stringTypeHandle = (typeof (string).TypeHandle.Value);
 
-        public static void Allocates(byte[] bytes, int length, Decoder decoder, Action<string> action)
+        public static void Allocate(byte[] bytes, int length, Decoder decoder, Action<string> action)
         {
             var stackAllocatedArrayLength = ComputeStackAllocationSize(bytes, length, decoder);
             var stackAllocatedArray = stackalloc byte[stackAllocatedArrayLength];
@@ -31,18 +31,20 @@ namespace StackAllocator
 
                 if (Environment.Is64BitProcess)
                 {
-                    var string64 = (String64*) stackAllocatedArray;
-                    string64->SyncBlockIndex = IntPtr.Zero;
-                    string64->MethodTablePointer = _stringTypeHandle;
-                    string64->Length = charsCount;
-                    return PointerHelper<string>.Reinterpret(((byte*) string64) + String64.SyncBlocSize);
+                    var string64Pointer = (String64*) stackAllocatedArray;
+                    string64Pointer->SyncBlockIndex = IntPtr.Zero;
+                    string64Pointer->MethodTablePointer = _stringTypeHandle;
+                    string64Pointer->Length = charsCount;
+                    var string64ObjectPointer = ((byte*) string64Pointer) + String64.SyncBlocSize;
+                    return (ObjectReference<string>)string64ObjectPointer;
                 }
 
-                var string32 = (String32*) stackAllocatedArray;
-                string32->SyncBlockIndex = IntPtr.Zero;
-                string32->MethodTablePointer = _stringTypeHandle;
-                string32->Length = charsCount;
-                return PointerHelper<string>.Reinterpret(((byte*) string32) + String32.SyncBlocSize);
+                var string32Pointer = (String32*) stackAllocatedArray;
+                string32Pointer->SyncBlockIndex = IntPtr.Zero;
+                string32Pointer->MethodTablePointer = _stringTypeHandle;
+                string32Pointer->Length = charsCount;
+                var string32ObjectPointer = ((byte*) string32Pointer) + String32.SyncBlocSize;
+                return (ObjectReference<string>)string32ObjectPointer;
             }
         }
 

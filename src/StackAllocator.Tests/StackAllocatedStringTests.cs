@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using NFluent;
@@ -28,6 +29,26 @@ namespace StackAllocator.Tests
             AllocatesString("rŒma–––in", (template, allocated) => Check.That(allocated).Equals(template), Encoding.UTF8);
             AllocatesString("мясо", (template, allocated) => Check.That(allocated).Equals(template), Encoding.UTF32);
             AllocatesString("v̤̝̺̬͔ͅi̝a҉͚̱̪̻͎̝̮ṋ̀d̦͖̖̮͞e̘̗͎̹", (template, allocated) => Check.That(allocated).Equals(template), Encoding.Unicode);
+        }
+
+        [Test]
+        public void Should_support_pinning()
+        {
+            AllocatesString("lol", (template, allocated) =>
+            {
+                var handle = GCHandle.Alloc(allocated, GCHandleType.Pinned);
+                handle.Free();
+            });
+        }
+
+        [Test]
+        public void Should_not_traumatize_GC()
+        {
+            AllocatesString("lol", (template, allocated) =>
+            {
+                new MyClass(allocated);
+                GC.Collect();
+            });
         }
 
         [Test]
@@ -89,7 +110,7 @@ namespace StackAllocator.Tests
         {
             AllocatesString("lol", (template, allocated) =>
             {
-                var dictionary = new Dictionary<string, int> {{allocated, 42}};
+                var dictionary = new Dictionary<string, int> { { allocated, 42 } };
                 Check.That(dictionary[allocated]).Equals(42);
                 Check.That(allocated.GetHashCode()).Equals(template.GetHashCode());
             });
@@ -101,7 +122,7 @@ namespace StackAllocator.Tests
             AllocatesString("romain", (template, allocated) =>
             {
                 var counter = 0;
-                const int iterationCount = 10*1000*1000;
+                const int iterationCount = 10 * 1000 * 1000;
                 var t1 = Task.Factory.StartNew(() =>
                 {
                     for (var i = 0; i < iterationCount; i++)
@@ -121,7 +142,7 @@ namespace StackAllocator.Tests
                 });
 
                 Task.WaitAll(t1, t2);
-                Check.That(counter).IsEqualTo(iterationCount*2);
+                Check.That(counter).IsEqualTo(iterationCount * 2);
             });
         }
 
@@ -131,6 +152,16 @@ namespace StackAllocator.Tests
             var bytes = encoding.GetBytes(template);
 
             UnsafeStackAllocator.NewString(bytes, bytes.Length, encoding.GetDecoder(), x => assertion(template, x));
+        }
+
+        public class MyClass
+        {
+            private readonly string _value;
+
+            public MyClass(string value)
+            {
+                _value = value;
+            }
         }
     }
 }

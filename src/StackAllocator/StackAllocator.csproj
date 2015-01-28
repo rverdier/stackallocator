@@ -83,7 +83,7 @@
   <ItemGroup>
     <Compile Include="ArrayHeaderHelper.cs" />
     <Compile Include="ArrayStackAllocator.cs" />
-    <Compile Include="PointerHelper.cs" />
+    <Compile Include="ObjectReference.cs" />
     <Compile Include="StringStackAllocator.cs" />
     <Compile Include="Unmanaged\Array32.cs" />
     <Compile Include="Unmanaged\Array64.cs" />
