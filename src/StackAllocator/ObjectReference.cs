@@ -1,11 +1,10 @@
 using System.Reflection.Emit;
+using InlineIL;
 
 namespace StackAllocator
 {
     internal unsafe struct ObjectReference<T>
     {
-        private static readonly PointerReinterpreter _pointerReinterpreter = CreatePointerReinterpreter();
-
         private readonly T _value;
 
         private ObjectReference(T value) : this()
@@ -15,7 +14,7 @@ namespace StackAllocator
 
         public static explicit operator ObjectReference<T>(void* pointer)
         {
-            return new ObjectReference<T>(_pointerReinterpreter(pointer));
+            return new ObjectReference<T>(ReinterpretPointerAs<T>(pointer));
         }
 
         public static implicit operator T(ObjectReference<T> pointer)
@@ -23,15 +22,11 @@ namespace StackAllocator
             return pointer._value;
         }
 
-        private static PointerReinterpreter CreatePointerReinterpreter()
+        private static T ReinterpretPointerAs<T>(void* pointer)
         {
-            var m = new DynamicMethod("ReinterpretPointerAs" + typeof(T).Name, typeof(T), new[] { typeof(void*) }, typeof(ObjectReference<T>), true);
-            var il = m.GetILGenerator();
-            il.Emit(OpCodes.Ldarg_0);
-            il.Emit(OpCodes.Ret);
-            return (PointerReinterpreter)m.CreateDelegate(typeof(PointerReinterpreter));
+            IL.Emit.Ldarg_0();
+            IL.Emit.Ret();
+            throw IL.Unreachable();
         }
-
-        private delegate T PointerReinterpreter(void* nativePointer);
     }
 }
